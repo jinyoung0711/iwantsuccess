@@ -74,6 +74,8 @@ for (i in (1:n.sim)) {
 }
 cat(mean(time.idle), "+/-", 2*sd(time.idle)/sqrt(n.sim), "\n")
 
+
+
 # Apply the Insurance Risk Model in Section 6.6 to Exercise 6.11
 
 n.sim = 100 # 모의실험 반복횟수
@@ -101,7 +103,34 @@ for ( i in 1:n.sim ) {
 c( mean(I), 2 * sd(I) / sqrt(n.sim) ) # 자본금이 바닥나지 않을 확률의 추정값 출력. 추정값은 얼마나 정확한가 ? ( 구간추정 같이 해주기 )
 
 # Exercise 6.12 (시각 T 이전에 자본금이 음이 되었다는 사실을 알 때, 자본금이 음이 된 정확한 시각과, 부족 금액의 분포를 추정)
-#### study question ####
+n.sim = 100 # 모의실험 반복횟수
+n0 = 1; a0 = 25000; T = 365; c = 11000
+lm = 10; nu = 0; mu = 0 # 보험금 청구율, 보험 가입율, 해지율
+generate.Y = function() rexp(1, rate = 1/1000) # 청구금액을 생성하는 함수수
+I = t.broke = amount.broke = numeric(length = n.sim) # t.broke와 amount.broke는 시간과 자본금이 음이 된 것을 의미
+for (i in 1:n.sim) {
+  t = 0; a = a0; n = n0 # Intialize
+  total.rate = nu + n * mu + n * lm; tE = rexp(1, rate = total.rate)
+  repeat {
+    if (tE > T) { I[i] = 1; break}
+    if (tE <= T) {
+      a = a + n*c*(tE - t); t = tE
+      J = sample(1:3, 1, prob = c(nu, n*mu, n *lm))
+      if (J == 1) n = n + 1
+      if (J == 2) n = n - 1
+      if (J == 3) {
+        Y = generate.Y()
+        {if (Y > a) {I[i] = 0; t.broke[i] = t; amount.broke[i] = Y- a; break; } #청구금액이 자본금을 넘는 경우 추가
+          else a = a - Y} # end of {if (Y > a)}
+      } # end of (J == 3)
+      tE = t + rexp(1, rate = total.rate)
+    } #end of if (tE <= T)
+  } # end of repeat
+} # end of for
+
+lst = list (time = t.broke [I == 0], amount = amount.broke[I == 0]) # 바닥이 난 경우만 따로 뽑아서 계산을 해야함...
+c(mean(lst$time), sd(lst$time)/sqrt(length(lst$time)))
+c(mean(lst$amount), sd(lst$amount)/sqrt(length(lst$amount)))
 
 # Exercise 6.17 for문 사용
 n.sim = 1000
@@ -239,3 +268,90 @@ LL2 = xbar2 - 2 * sd(E2) / sqrt(n.sim); UL2 = xbar2 + 2 * sd(E2) / sqrt(n.sim)
 cat("alpha < 0의 기대이익의 점추정량과 신뢰구간은 다음과 같다. [ 점추정량 :" , xbar1, ",신뢰구간 : (",LL1, ",", UL1, ")]\n")
 
 cat("alpha > 0일 때의 최적전략의 기대이익의 점추정량과 신뢰구간은 다음과 같다. [ 점추정량 :" , xbar2, ",신뢰구간 : (",LL2, ",", UL2, ")]\n")
+
+# 2015년 3번 
+#3-1
+nsim <- 100
+
+S0 <- 100
+a <- 110
+mu <- 0
+sig <- 0.04
+Ta <- numeric()
+for(i in 1:nsim) {
+  n <- 1
+  x <- rnorm(1,mu,sig)
+  repeat {
+    x <- x+rnorm(1,mu,sig)
+    Sn <- S0*exp(x)
+    if(abs(Sn-S0)>=a) {
+      Ta[i] <- n
+      break
+    }
+    n = n+1
+  }
+}
+Ta
+mean(Ta) #E(Ta)
+sd(Ta)/sqrt(n) #Ta평균의 표준오차
+
+
+#3-2
+Ta <- numeric()
+SS <- list()
+for(i in 1:2) {
+  S <- numeric()
+  n <- 1
+  x <- rnorm(1,mu,sig)
+  repeat {
+    x <- x+rnorm(1,mu,sig)
+    S <- c(S,S0*exp(x))
+    if(abs(S[n]-S0)>=a) {
+      Ta[i] <- n
+      break
+    }
+    n = n+1
+  }
+  SS[[i]] <- S
+}
+plot(c(0,max(Ta)), c(1,max(abs(c(S0,SS[[2]])-S0))), type="n")
+for (i in seq_along(Ta)) {
+  lines(0:Ta[i],abs(c(S0,SS[[i]])-S0),lty=3,col=2+i)
+}
+abline(h=a, lty=2)
+
+## 2020 중간 1번
+option_earning = function(N = 90, S.zero = 100, mu = 0.001, sigma = 0.01, K = 100) {
+  S = S.zero; earning = 0; t = 1
+  repeat {
+    S = S * exp(rnorm(1, mean = mu, sd = sigma))
+    if (S > 110) {earning = S - K; break}
+    t = t + 1
+    if (t > N) {earning = max(S-K, 0); break}
+  }
+  return(earning)
+}
+
+x = replicate(400, option_earning() )
+c(mean(x), sd(x)/ sqrt(20))
+R
+# 2021년 중간 2번
+# 2번 
+N = 200; S.zero = 100; mu = -0.001; sigma = 0.015; n.sim = 400
+earn1 = earn2 = numeric(N)
+for (i in 1:n.sim) {
+  S = S.zero * exp(cumsum(rnorm(N, mean = mu, sd = sigma)))
+  if (max(S) > 110) earn1[i] = S[which(S > 110)[1]] - S.zeroRtR
+  else earn1[i] = S[N] - S.zero
+  if (max(S) > 105 | min(S) < 90) earn2[i] = S[which(S > 105 | S < 90)[1]] - S.zero
+  else earn2[i] = S[N] - S.zero
+}
+
+c(mean(earn1), sd(earn1)/n.sim)
+
+c(mean(earn2), sd(earn2)/n.sim)
+
+c(mean(earn2 - earn1), sd(earn2 - earn1) / n.sim)
+
+# 두번 쨰 전략이 수익이 더 큼을, 손실이 더 적음을 알 수 있다.
+ㄴㄴ
