@@ -166,6 +166,15 @@ df$ExerciseAngina<-as.numeric(factor(df$ExerciseAngina), unique(df$ExerciseAngin
 df$ST_Slope<-as.numeric(factor(df$ST_Slope), unique(df$ST_Slope))
 df$HeartDisease<-as.numeric(factor(df$HeartDisease), unique(df$HeartDisease))
 
+'''
+df$Sex <- as.numeric(as.factor(df$Sex)) # 1 : F, 2 : M
+df$ChestPainType <- as.numeric(as.factor(df$ChestPainType)) # 1 : ASY, 2 : ATA, 3 : NAP, 4 : T
+df$RestingECG <- as.numeric(as.factor(df$RestingECG)) # 1 : LVH, 2 : Normal, 3 : ST
+df$ExerciseAngina <- as.numeric(as.factor(df$ExerciseAngina)) # 1: N, 2 : Y
+df$ST_Slope <- as.numeric(as.factor(df$ST_Slope)) # 1 : Down, 2 : Flat, 3 : Up
+df$HeartDisease <- as.factor(df$HeartDisease)
+'''
+
 # 산점도
 # install.packages("GGally")
 library("GGally")
@@ -179,12 +188,12 @@ fun_lower <- function(x, y) {
         col = adjustcolor("blue", alpha.f=abs(round(cor(x, y),2))+0.4))
 }
 pairs(df, lower.panel=fun_lower)
+
 #ggpairs(df)
 
+#### 2. 전처리 ####
 
-### 2. 전처리
-
-# IQR_function
+## IQR_function
 IQR_fun <- function(x) {
   UpperQ = fivenum(x)[4]
   LowerQ = fivenum(x)[2]
@@ -197,26 +206,112 @@ IQR_fun <- function(x) {
   return(length(upperOutlier) + length(lowerOutlier)) # 이상치로 판정되는 데이터의 개수를 의미
 }
 
-# [Drop RestingBP Outlier] 
+### [Drop RestingBP Outlier] ###
+
 df <- df[!(df$RestingBP == 0 ), ] # 918개 중 1개 제거 -> 917개 
-sum(df$RestingBP==0)
+sum(df$RestingBP==0); sum(df$RestingBP==0)
 
 IQR_fun(df$RestingBP) # 917개 중 27개 Outlier 제거 -> 890개
+str(df$RestingBP); str(df$RestingBP)
+
+par(mfrow=c(1,2))
+
+boxplot(RestingBP ~ HeartDisease, df, col=col12, 
+        main="Plot of RestingBP by HeartDisease\n")
+legend("topright", legend=unique(df$HeartDisease), fill=col12) 
 
 # [Drop Cholesterol Outlier] (콜레스테롤 수치 mg/dl)
 df <- df[!(df$Cholesterol == 0 ), ] # 164개 데이터 제거 완료 -> 726개 데이터 존재
 sum(df$Cholesterol==0)
 
-IQR_fun(df$Cholesterol) # 22개 Outlier 제거
+IQR_fun(df$Cholesterol) # 22개 Outlier 제거 -> 704개 데이터 존재
 str(df$Cholesterol)
+
+boxplot(Cholesterol ~ HeartDisease, df, col=col12, 
+        main="Plot of Cholesterol by HeartDisease\n")
+legend("topright", legend=unique(df$HeartDisease), fill=col12) 
 
 ## [Drop MaxHR Outlier]
 IQR_fun(df$MaxHR) # 0개 Outlier 제거
 str(df$MaxHR)
 
-IQR_fun(df$Oldpeak) # 14개 Outlier 제거
+## [Drop Oldpeak Outlier]
+IQR_fun(df$Oldpeak) # 12개 Outlier 제거 -> 692개 데이터 존재
 str(df$Oldpeak)
+
+boxplot(Oldpeak ~ HeartDisease, df, col=col12, 
+        main="Plot of Oldpeak by HeartDisease\n")
+legend("topright", legend=unique(df$HeartDisease), fill=col12) 
 
 ### 3-1. 모델 구축
 
-# variable select
+#### Model selection using K-fold CV ####
+k <- 10 
+set.seed(1)
+folds <- base::sample(1:k, nrow(df), replace=T)
+table(folds)
+str(df)
+cv.error <- matrix(0, k, 11)
+colnames(cv.error) <- paste(1:11)
+cv.error
+library(e1071)
+library(leaps)
+for (j in 1:10) {
+  best.fit <- regsubsets(HeartDisease~., data=df[folds!=j,], nvmax=11) # training dfa
+  test.mat <- model.matrix(HeartDisease~., data=df[folds==j,])
+  for (i in 1:11) {
+    coeff <- coef(best.fit, id=i)
+    y.pred <- test.mat[,names(coeff)] %*% coeff # test dfa
+    cv.error[j,i] <- mean((df$HeartDisease[folds==j]-y.pred)^2) # test MSE
+  }
+}
+mean.cv.error <- apply(cv.error, 2, mean)
+mean.cv.error
+
+par(mfrow=c(1,1))
+plot(mean.cv.error, type='b')
+
+reg.best <- regsubsets(HeartDisease~., data=df, nvmax=11)
+coef(reg.best, 8)
+str(df)
+
+'''
+# Normalization #
+normal.fun <- function(x) {
+  return((x-min(x))/(max(x)-min(x)))
+}
+
+df$Cholesterol <- normal.fun(df$Cholesterol)
+df$MaxHR <- normal.fun(df$MaxHR)
+df$Oldpeak <- normal.fun(df$Oldpeak)
+df$Age <- normal.fun(df$Age)
+df$HeartDisease <- as.factor(df$HeartDisease)
+head(df[1])
+str(df)
+'''
+
+#### SVM model ####
+
+df2 <- subset(df, select=-c(RestingBP, FastingBS, RestingECG))
+df2$HeartDisease <- as.factor(df2$HeartDisease)
+# Support Vector Machine
+library(e1071)
+
+svmfit <- svm(HeartDisease ~ ., data = df2, kernel = 'radial', cost=10, gamma = 0.5, scale=F)
+plot(svmfit, df2)
+svmfit
+
+svmfit$index
+
+# 10-fold CV
+set.seed(1)
+tune.out <- tune(svm, HeartDisease~., data=df2, kernel = 'radial', 
+                 ranges=list(cost=c(0.1, 1, 10, 100, 1000), gamma = c(0.5, 1,2,3,4)))
+
+summary(tune.out) 
+bestmod <-tune.out$best.model
+bestmodS
+
+# 여기부터 test 나눠서 해야함
+ypred <- predict(bestmod, newdata = testdf)
+table(ypred, testdf$y)
