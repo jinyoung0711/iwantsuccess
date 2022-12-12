@@ -3,7 +3,7 @@ setwd('C:/Users/82106/22_다변량분석_데이터')
 #### [Example 9.4] Principal Component Method ####
 stock = read.table("T8-4.DAT")
 names(stock) = c("JPM", "Citi", "WFargo", "Shell", "Exxon")
-
+stock
 # 적재행렬 L (estimated factor loadings) 출력 : 인자의 수는 2개
 R = cor(stock); p = ncol(R); SD = eigen(R)
 E = SD$vectors; lm = SD$values
@@ -17,7 +17,7 @@ E = SD$vectors; lm = SD$values
 rowSums(L*L)
 
 # specific variances 출력
-(psi =diag(R) - rowSums(L*L)) # R의 대각원소는 모두 1
+(psi = diag(R) - rowSums(L*L)) # R의 대각원소는 모두 1
 
 # Residual matrix 출력
 R - (L%*%t(L) + diag(psi))
@@ -56,6 +56,7 @@ R = as.matrix(deca.R)
 L = ml.obj$loadings; Psi = diag(ml.obj$uniquenesses)
 res.mat = R - L %*% t(L) - Psi
 apply(res.mat,2,round,digits=3)
+
 # PC Method
 p = ncol(R); SD = eigen(R)
 E = SD$vectors; lm = SD$values
