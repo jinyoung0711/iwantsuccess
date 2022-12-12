@@ -1,4 +1,4 @@
-#### [Sec9.1 : Goodness-of-Fit Tests]
+#### [Sec9.1 : Goodness-of-Fit Tests] ####
 
 # Example 9b and more
 draw.FnF = function(x, F, ...) { # draw the ecdf Fn and the assumed df F
@@ -27,17 +27,7 @@ chisq.test(y, p = rep(1/6, 6))$p.value
 
 # [Exercise 9.2 - (b)]
 chisq.test(y, p = rep(1/6, 6),
-           simulate.p.value = TRUE, B = 10000)$p.value
-
-# [Example 9c]
-n = 30
-N = c(6, 2, 1, 9, 7, 5) # 하루 사고 건수 5건과 8건을 묶어서 한 범주로 만들었음에 주의
-m = (sum(N[1:5] * 0:4) + 4*5 + 1*8) # m means Y_bar 
-phat = dpois(0:4, m); phat[6] = 1 - ppois(4, m)
-chisq.test(N, p = phat) # 자유도에 주의, 잘못된 자유도 떄문에 적절하지 않은 p값
-# 추정된 모수의 수만큼 조정된 자유도로 다음과 같이 p값을 계산해야함.
-t = sum((N - n*phat)^2/(n*phat))
-1 - pchisq(5, 4) # n이 클 때의 근사적 p값
+           simulate.p.value = TRUE, B = 10000)$p.value # 표본 크기가 커서 카이제곱 근사가 의미가 없다 (이 문제에서는)
 
 # [Exercise 9.4]
 draw.FnF = function(x, F, ...) {
@@ -51,7 +41,18 @@ ks.test(y, punif, min=50, max=200)
 ks.test(y, punif, min=50, max=200, exact=TRUE)$p.value # exact arg 물어보기 : 표본크기가 작을 때 쓸수 있는 방법
 ks.test(y, punif, min=50, max=200, exact=FALSE)$p.value
 
+
 #### [Sec 9.2 : Goodness-of-Fit Tests When Some Parameters Are Unspecified] ####
+# [Example 9c]
+n = 30
+N = c(6, 2, 1, 9, 7, 5) # 하루 사고 건수 5건과 8건을 묶어서 한 범주로 만들었음에 주의
+m = (sum(N[1:5] * 0:4) + 4*5 + 1*8)/30 # m means Y_bar -> lambda
+phat = dpois(0:4, m); phat[6] = 1 - ppois(4, m) # phat[6]은 5 이상인거 ~
+chisq.test(N, p = phat) # 자유도에 주의, 잘못된 자유도 떄문에 적절하지 않은 p값
+# 추정된 모수의 수만큼 조정된 자유도로 다음과 같이 p값을 계산해야함.
+t = sum((N - n*phat)^2/(n*phat))
+1 - pchisq(t, 4) # n이 클 때의 근사적 p값 -> p.value가 조온나 작다. H0 기각 !!!!!!!!!!!!!!!!!1
+
 # 2017 Mid-term Exam : Question [2]
 n = 20; theta = 5; N = 1000
 phat = numeric(N)
@@ -85,7 +86,7 @@ pval1 = replicate(1000, f1(20))
 boxplot(pval1)
 c(mean(pval1), sd(pval1)/sqrt(1000))
 
-# [옳은 방법] - check 하기...
+# [옳은 방법] 
 f2 = function(n, B) {
   x = rexp(n, rate=1)
   d = ks.test(x, 'pexp', rate=1/mean(x))$statistic
@@ -101,11 +102,11 @@ f2 = function(n, B) {
 pval.2 = replicate(100, f2(n=20, B=400))
 hist(pval.2)
 ks.test(pval.2, "punif") # 동일한 값들이 존재해서 나오는 warning message
-c(mean(pval.2), sd(pval.2)/sqrt(100)) # 여기 100 들어가는거 맞나 ??????
+c(mean(pval.2), sd(pval.2)/sqrt(100))
 boxplot(pval.2)
 
 #### [Sec 9.3 : The Two-Sample Problem] ####
-
+?pareto
 ## [Exercise 9.10] ##
 
 x = c(65.2, 67.1, 69.4, 78.4, 74, 80.3)
