@@ -104,8 +104,23 @@ mosaicplot(~ Sex + Class + Survived, data=Titanic, col=TRUE)
 
 plot(corresp(T12.8, nf = 2))
 
-
+# 실습 Mosaic Plots
 library(MASS)
+par(mfrow = c(1,1))
+
+caith # 해당 자료에서 fair는 금발을 의미.
+
+mosaicplot(caith, col = TRUE, main = "Eye Color vs Hair color", 
+           xlab = "Eye Color", ylab = "Hair Color")
+
+mosaicplot(t(caith), col = TRUE, main = "Eye Color vs Hair color",
+           ylab = "Eye Color", xlab = "Hair Color")
+
+# plot(corresp(caith))
+plot(corresp(caith, nf = 2)) # 대응분석을 해서 그림 그림.
+# blue, light는 비슷한 분포, fair와 비슷한 분포
+
+# library(MASS)
 x1 = mvrnorm(n=10, mu=c(1,1), Sigma=matrix(c(1,0.5,0.5,1), nrow=2))
 x2 = mvrnorm(n=10, mu=c(3,5), Sigma=matrix(c(1,0,0,1), nrow=2))
 x3 = mvrnorm(n=10, mu=c(5,1), Sigma=matrix(c(1,-0.5,-0.5,1), nrow=2))
@@ -115,6 +130,7 @@ group = rep(1:3, c(10, 10, 10)) # This is not known to the analyst.
 plot(x.mat, col=group, asp=1, xlab="x1", ylab="x2")
 
 plot(x.mat, col=1, pch=16, asp=1, xlab="x1", ylab="x2")
+
 
 # Assume we do not know which group the observations belong to.
 plot(hclust(dist(x.mat), method="single"), labels=group) # Linkage method
@@ -132,4 +148,11 @@ x.shuffle = x.mat[shuffled.row,]
 group.shuffle = group[shuffled.row]
 plot(hclust(dist(x.shuffle), method="ward.D2"), labels=group.shuffle) # no change on the result
 
-        
+# Biplot : 주성분이 의미가 없다면 Biplot 또한 무의미
+# 대학자료는 변수의 특성이 너무 다르기 때문에 표준화를 진행하는 것이 많다.
+univ <- read.table("T12-9.DAT")
+names(univ) = c("name", "SAT", "Top10", "Accept", "SFRatio", "Expenses", "Grad")
+row.names(univ) = univ$name
+X = univ[, -1]
+X.std = scale(X)
+biplot(princomp(X.std))
