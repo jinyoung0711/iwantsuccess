@@ -1,3 +1,5 @@
+#### Chapter 8 : Variance Reduction Techniques ####
+
 # Example 8a
 # E[N]의 추정량의 표준오차가 큼을 확인할 수 있다.
 alp = 0.9; B = 0.8; n.sim = 100
@@ -13,7 +15,13 @@ for (i in 1:n.sim) {
 
 c(mean(N), sd(N)/sqrt(n.sim))
 
-# [실습1] Estimating the reliability function of the bridge system 
+#### [8.1] The use of Antithetic Variables ####
+# E[x1] = E[x2] = theta 일 때, E[(x1 + x2)/2] = theta.
+# Var[(x1 + x2)/2] = 1/4 * (Var[x1] + Var[x2] + 2 * Cov(x1, x2))이므로, Cov(x1, x2) < 0이라면 Variable 감소 가능
+
+
+# [실습1] Estimating the reliability function of the bridge system
+# Antithetic variable approach를 적용했을 때와 적용하지 않았을 때 비교.
 # 시스템 신뢰도의 추정량을 반복해서 구한 결과로 추정량의 표준오차를 구함
 # nI번 반복해서 하나의 추정량을 얻는데, 이 작업을 nJ번 반복해서 nJ개의 추정량을 구함
 # nJ개의 추정량을 이용해 추정량의 표준오차를 구함
@@ -80,7 +88,6 @@ c(mean(y), sd(y)/sqrt(length(y)))
 # y를 x^2으로 둘고 풀기
 B = 100
 
-
 Y = U^2 
 
 # [Antithetic variable]
@@ -98,8 +105,6 @@ c(mean(X), sd(X)/sqrt(100))
 # [Control Variate]
 X = numeric(100)
 fun = function(x) integrate(exp(x^2), lower = 0, upper = 1) 
-
-
 
 # [8.12]
 n = 100
@@ -278,7 +283,7 @@ for (i in 1:n.sim) {
 c(mean(Imp), sd(Imp)/sqrt(n.sim))
 
 # 흔히 붙는 조건
-# 하번이라도 일정금액으로 내려가면 (원유가 한번이라도 50$ 밑으로 내려가면 ~)
+# 한번이라도 일정금액으로 내려가면 (원유가 한번이라도 50$ 밑으로 내려가면 ~)
 # [Sec 8.8 실습] - 방법1
 exotic = function(v = 100, t=90, K=100, s=30, b=95,
                   mu=0.0001, sigma=0.01) {
