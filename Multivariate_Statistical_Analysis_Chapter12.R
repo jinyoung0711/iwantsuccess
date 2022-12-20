@@ -130,13 +130,13 @@ plot(corresp(caith, nf = 2)) # 대응분석을 해서 그림 그림.
 x1 = mvrnorm(n=10, mu=c(1,1), Sigma=matrix(c(1,0.5,0.5,1), nrow=2))
 x2 = mvrnorm(n=10, mu=c(3,5), Sigma=matrix(c(1,0,0,1), nrow=2))
 x3 = mvrnorm(n=10, mu=c(5,1), Sigma=matrix(c(1,-0.5,-0.5,1), nrow=2))
+
 # Multivariate normal distribution is elliptically shaped.
 x.mat = rbind(x1, x2, x3)
 group = rep(1:3, c(10, 10, 10)) # This is not known to the analyst.
 plot(x.mat, col=group, asp=1, xlab="x1", ylab="x2")
 
 plot(x.mat, col=1, pch=16, asp=1, xlab="x1", ylab="x2")
-
 
 # Assume we do not know which group the observations belong to.
 plot(hclust(dist(x.mat), method="single"), labels=group) # Linkage method
@@ -162,3 +162,25 @@ row.names(univ) = univ$name
 X = univ[, -1]
 X.std = scale(X)
 biplot(princomp(X.std))
+
+library(MASS)
+x1=mvrnorm(n=10,mu=c(1,1),Sigma=matrix(c(1,0.5,0.5,1),nrow=2))
+x2=mvrnorm(n=10,mu=c(3,5),Sigma=matrix(c(1,0,0,1),nrow=2))
+x3=mvrnorm(n=10,mu=c(5,1),Sigma=matrix(c(1,-0.5,-0.5,1),nrow=2)) # Multivariate normal distribution is elliptically shaped.
+x.mat=rbind(x1, x2, x3)
+group=rep(1:3,c(10,10,10)) # This is not known to the analyst.
+plot(x.mat,col=group,asp=1,xlab="x1",ylab="x2")
+plot(x.mat,col=1,pch=16,asp=1,xlab="x1",ylab="x2")
+
+# Assume we do not know which group the observations belong to.
+plot(hclust(dist(x.mat),method="single"),labels=group)# Linkage method
+plot(hclust(dist(x.mat),method="complete"),labels=group)# Linkage method
+plot(hclust(dist(x.mat),method="average"),labels=group)# Linkage method
+plot(hclust(dist(x.mat),method="ward.D2"),labels=group)# Ward's method
+
+# Findings: Ward's method is better for the elliptically shaped data.
+# What if the order of observations are changed?
+shuffled.row=sample(1:30,30)
+x.shuffle=x.mat[shuffled.row,]
+group.shuffle=group[shuffled.row]
+plot(hclust(dist(x.shuffle),method="ward.D2"),labels=group.shuffle)# no change on the result
