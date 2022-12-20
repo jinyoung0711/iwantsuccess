@@ -4,6 +4,7 @@ setwd('C:/Users/82106/22_다변량분석_데이터')
 stock = read.table("T8-4.DAT")
 names(stock) = c("JPM", "Citi", "WFargo", "Shell", "Exxon")
 stock
+
 # 적재행렬 L (estimated factor loadings) 출력 : 인자의 수는 2개
 R = cor(stock); p = ncol(R); SD = eigen(R)
 E = SD$vectors; lm = SD$values
@@ -20,6 +21,7 @@ rowSums(L*L)
 (psi = diag(R) - rowSums(L*L)) # R의 대각원소는 모두 1
 
 # Residual matrix 출력
+# Residual Matrix는 PC Method에서 사용하지 않는 eigen value의 제곱의 합보다 클 수 없다.
 R - (L%*%t(L) + diag(psi))
 
 ## Table 9.3과 residual matrix 출력: ML method에 의한 적재행렬 추정: Example 9.4 참조.

@@ -1,6 +1,7 @@
 # install.packages("bnlearn")
-
+library(visNetwork)
 library(bnlearn)
+library(dplyr)
 setwd("C:/Users/82106/iwantsuccess")
 df <- read.csv("train.csv")
 df
@@ -89,27 +90,29 @@ black_list = tiers2blacklist(list("Age", "Sex",
 black_list = rbind(black_list, c("Age", "Sex"))
 
 # DAG에 포함되어야할 엣지들 -> 승현이가 세운 가설 바탕으로 넣음 (다같이 고민해보기)
-white_list=matrix(c("HeartDisease", "ChestPainType", "HeartDisease", "ExerciseAngina",
-                    "Oldpeak", "HeartDisease", "ST_Slope", "HeartDisease", "HeartDisease", "RestingBP"),
+white_list=matrix(c("ChestPainType", "HeartDisease", "ExerciseAngina", "HeartDisease",
+                    "Oldpeak", "HeartDisease", "ST_Slope", "HeartDisease", "RestingBP", "HeartDisease"),
                   ncol = 2, byrow = TRUE, dimnames = list(NULL, c("from", "to")))
 
-H.dag <- gs(H.df, blacklist = black_list, whitelist = white_list)
+H.dag <- gs(H.df, whitelist = white_list)
 H.dag
 # 노드의 진행 방향을 사전에 아는 경우, 즉 실험 설정에서 사전 지식을 바탕으로 인과관계를 직접 설정하는 방법
 # H.dag = pdag2dag(H.dag, ordering = "")
 plot(H.dag)
+H.dag <- set.arc(H.dag, "Age", "MaxHR")
 str(H.df)
 # 이산형노드는 다른 이산형 노드만을 부모로 가질 수 있기에 
 attributes(H.dag)
 H.dag$learning
 H.dag$nodes$HeartDisease
 H.dag$arcs
-
-H.group = ifelse(names(H.dag$nodes)%in%c("Age","Sex"),2,1)
-plot_network(H.dag,group=H.group,title="H.dag_fitting")
+plot(H.dag)
+set.seed(1)
+H.group1 = ifelse(names(H.dag$nodes)%in%c("Age","Sex"),2,1)
+plot_network(H.dag,group=H.group1,title="H.dag_fitting")
 
 strength_H1 = boot.strength(H.df, R = 200, algorithm = "gs",
-                           algorithm.args = list(blacklist = black_list, whitelist = white_list))
+                           algorithm.args = list(whitelist = white_list))
 strength_H1
 # strength는 bootstrap sample에서 순서에 상관없이 from → to나 to→ from의 연결이 나온 확률
 # direction은 bootstrap sample에서 from → to의 연결이 나온 확률
@@ -117,7 +120,7 @@ attr(strength_H1, 'threshold') # 임계값을 넘는 값들만
 average_H1 = averaged.network(strength_H1)
 
 plot_network(average_H1, strength_H1, group=H.group) 
-
+H.
 # undirected.arcs(H.dag)
 # 임의로 방향성 제공해주기 
 # Sex -> ChestPainType, RestingBP <- Age <- MaxHR, ST_Slope -> HeartDisease
@@ -174,7 +177,7 @@ H.df2 <- subset(df2, select= -c(Cholesterol))
 C.df2 <- subset(df2, select= -c(HeartDisease))
 
 # Bayesian Network : Grow-Shrink Algorithm
-H.dag2 <- gs(H.df2, blacklist = black_list, whitelist = white_list)
+H.dag2 <- gs(H.df2, whitelist = white_list)
 H.dag2
 
 plot(H.dag2)
@@ -182,7 +185,12 @@ plot(H.dag2)
 # H.dag2 <- set.arc(H.dag2, "Sex", "MaxHR") # 방향성 제공 Sex -> MaxHR
 # H.dag2 <- set.arc(H.dag2, "Age", "Oldpeak") # 방향성 제공 Age -> Oldpeak
 # H.dag2 <- set.arc(H.dag2, "ST_Slope", "HeartDisease") # 방향성 제공 Sex -> HeartDisease
-H.dag2 <- drop.arc(H.dag2, "ChestPainType", "ExerciseAngina")
+H.dag2 <- drop.arc(H.dag2, "Sex", "MaxHR") # Sex -> MaxHR 방향성 제공
+H.dag2 <- drop.arc(H.dag2, "Age", "ChestPainType") # Sex -> MaxHR 방향성 제공
+H.dag2 <- drop.arc(H.dag2, "Age", "Oldpeak") # Sex -> MaxHR 방향성 제공
+H.dag2 <- drop.arc(H.dag2, "Oldpeak", "ExerciseAngina") # Sex -> MaxHR 방향성 제공
+H.dag2 <- drop.arc(H.dag2, "ExerciseAngina", "ChestPainType") # Sex -> MaxHR 방향성 제공
+
 H.fit2 <- bn.fit(H.dag2, H.df2) 
 H.fit2
 
@@ -191,10 +199,22 @@ summary(H.fit2)
 df2 %>%
   filter(HeartDisease == 0 & Oldpeak == 0) %>% View()
 
-bn.fit.barchart(H.fit2$HeartDisease)
-
+bn.fit.dotchart(H.fit2$HeartDisease)
+bn.fit.dotplot(H.fit2$HeartDisease)
+H.dag2
 H.group2 = ifelse(names(H.dag2$nodes)%in%c("Age","Sex"),2,1)
 plot_network(H.dag2,group=H.group2,title="H.dag2_fitting")
+strength_H2 = boot.strength(H.df2, R = 200, algorithm = "gs",
+                            algorithm.args = list(whitelist = white_list))
+strength_H2
+# strength는 bootstrap sample에서 순서에 상관없이 from → to나 to→ from의 연결이 나온 확률
+# direction은 bootstrap sample에서 from → to의 연결이 나온 확률
+attr(strength_H2, 'threshold') # 임계값을 넘는 값들만  
+average_H2 = averaged.network(strength_H2)
+
+plot_network(average_H2, strength_H2, group=H.group2) 
+average_H2$arcs
+average_H2$nodes$HeartDisease
 
 C.dag2 <- gs(C.df2, blacklist = black_list, whitelist = white_list)
 plot(C.dag2)
