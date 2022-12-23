@@ -1,10 +1,14 @@
-setwd('C:/Users/82106/22_다변량분석_데이터')
+# setwd('C:/Users/82106/22_다변량분석_데이터')
 
 #### [Example 9.4] Principal Component Method ####
+# Table 9.2 생성 : 상관행려 이용. 인자의 수는 2개. 주성분 방법으로 적재행렬추정
+# factanal()은 적재행렬의 추정을 위해 주성분 방법이 아니라 MLE 방법을 적용. 
 stock = read.table("T8-4.DAT")
 names(stock) = c("JPM", "Citi", "WFargo", "Shell", "Exxon")
 stock
-
+# 적재값은 주성분(고유벡터)에 고유값의 제곱근을 곱한 값임.
+# 참고: 상관행렬로 분석을 하는 경우, 인자분석의 적재행렬은 8장에서 배운 변수와 주성분 사이의 상관계수행렬과 일치하게 됨 (왜?)
+# [Q] 공분산행렬로 분석할 때는?
 # 적재행렬 L (estimated factor loadings) 출력 : 인자의 수는 2개
 R = cor(stock); p = ncol(R); SD = eigen(R)
 E = SD$vectors; lm = SD$values
@@ -24,6 +28,7 @@ rowSums(L*L)
 # Residual Matrix는 PC Method에서 사용하지 않는 eigen value의 제곱의 합보다 클 수 없다.
 R - (L%*%t(L) + diag(psi))
 
+#### Example 9.5 ####
 ## Table 9.3과 residual matrix 출력: ML method에 의한 적재행렬 추정: Example 9.4 참조.
 stock = read.table("T8-4.DAT")
 names(stock) = c("JPM","Citi","WFargo","Shell","Exxon")
@@ -43,18 +48,17 @@ apply(res.mat, 2, round, digits=3)
 factanal(factors=1, covmat=R, n.obs=nrow(stock))$PVAL # 적절치 않다
 factanal(factors=2, covmat=R, n.obs=nrow(stock))$PVAL # 적절하지 않다라고 할 만한 충분한 근거x
 factanal(factors=3, covmat=R, n.obs=nrow(stock))$PVAL
-# 상관행렬 R을 이용한 인자분석, 인자이 수는 2개
+# 상관행렬 R을 이용한 인자분석, 인자의 수는 2개
 (fa.obj = factanal(factors = 2, covmat = R, n.obs = nrow(stock), rotatic))
 # 또
 # 결론적으로 두개의 인자로 자료를 잘 설명하는 편은 아니다.
 
-
-# [Example 9.6]
-
+#### [Example 9.6] ####
+# 원자료 없이 상관행렬만 주어진 경우. 관측값의 수는 280
 # ML Method
 deca.R = read.table("E9-6.DAT")
 R = as.matrix(deca.R)
-(ml.obj = factanal(factors=4, covmat=R, n.obs=280))
+(ml.obj = factanal(factors=4, covmat=R, n.obs=280)) # 원래 자료가 없는 경우 크기만 지정해줘도 괜찮다.
 L = ml.obj$loadings; Psi = diag(ml.obj$uniquenesses)
 res.mat = R - L %*% t(L) - Psi
 apply(res.mat,2,round,digits=3)
@@ -67,11 +71,11 @@ E = SD$vectors; lm = SD$values
 res.mat = R - L %*% t(L) - Psi
 apply(res.mat,2,round,digits=3)
 
-# [Example 9.8]
+##### [Example 9.8] ####
 
-R.dfr = read.table('E9-8-corrected.txt')
+R.dfr = read.table('E9-8-corrected.txt') # 삼각행렬이라 수정한 데이터 
 names(R.dfr) = c("Gaelic", "English", "History", "Arithmetic", "Algebra", "Geomery")
-( R = as.matrix(dfr) )
+( R = as.matrix(dfr) ) # 상관행렬 추정
 
 p = 6; n = 220 # 변수의 수와 표본의 크기
 # factanal 함수는 적재행렬을 최대가능도 방법으로 추정
@@ -89,7 +93,7 @@ R - L %*% t(L) - Psi # residual matrix (잔차행렬)
 plot(none.fa$loadings, xlim=c(0, 1),ylim=c(-0.6, 0.9), pch=16, cex=1.2, asp=1, main="Figure 9.1")
 abline(h = 0, col = 4); abline(v = 0, col = 4)
 text(none.fa$loadings[, 1], none.fa$loadings[, 2] + 0.04, labels = names(R.dfr), col = 4, cex = 0.8)
-T = rota.fa$rotmat # rotation matrix T 
+T = rota.fa$rotmat # rotation matrix T
 arrows(x0 = 0, y0 = 0, x1 = T[1, 1], y1 = T[2, 1], col = 4, lty = 2) # T(1,0)’ (or the first column of T) is the new x-axis
 arrows(x0 = 0, y0 = 0, x1 = T[1, 2], y1 = T[2, 2], col = 4, lty = 2) # T(0,1)’ (or the second column of T) is the new y-axis
 text(T[1, ] + 0.05, T[2, ], labels = c("F1*", "F2*"), col = 4)
@@ -98,7 +102,7 @@ text(T[1, ] + 0.05, T[2, ], labels = c("F1*", "F2*"), col = 4)
 # 적절한 인자의 수를 결정하는 방법에서 가설 검정에 의해 인자의 수를 결정하는 방법
 # -> 원래 자료는 없어도 되지만 표본의 수가 필요함.
 
-# [Example 9.11]
+#### [Example 9.11] ####
 deca.R = read.table("E9-6.DAT")
 R = as.matrix(deca.R)
 obj = princomp(covmat = R); E = obj$loadings
@@ -111,21 +115,22 @@ LT = obj.rota$loadings
 plot(LT[,1], LT[,2])
 text(LT[,1] + 0.02, LT[,2], labels=1:10, col=4, cex=0.8)
 
-# 최대가능도함수에서는 factanal(rotation = varimax), 주성분 분석에서는 varimax()사용
+# MLE_Method : factanal(rotation = varimax), PC_Method : varimax()사용
 
-# [Example 9.12]
+#### [Example 9.12] ####
 stock = read.table("T8-4.DAT")
 names(stock) = c("JPM","Citi","WFargo","Shell","Exxon")
 fa.obj = factanal(stock,factors=2,rotation="varimax",scores="regression")
+# 상관행렬로 인자분석을 실시하며 (공분산행렬을 지정해 주어도 상관행렬로 분석함.)
+# 다음 두 문장과 같이 자료를 표준화하지 않아도 같은 인자점수를 얻을 수 있음.
 #stock.z = scale(stock)
 #fa.z.obj = factanal(stock.z,factors=2,rotation="varimax",scores="regression")
 plot(fa.obj$scores,pch=16); abline(h=0,v=0)
+# 표준화된 관측값 z = c(.50, -1.40, -.20, -.70, 1.40)에 대응하는 인자점수를 계산하고자 함.
 z = c(.50, -1.40, -.20, -.70, 1.40)
 t(fa.obj$loadings) %*% solve(cor(stock)) %*% z 
 
-
-
-# [Exercise 9.10]
+#### [Exercise 9.10] ####
 (R <- matrix(c(1, 0.505, 0.569, 0.602, 0.621, 0.603, 
                0.505, 1, 0.422, 0.467, 0.482, 0.450, 
                0.569, 0.422, 1, 0.926, 0.877, 0.878, 
@@ -141,7 +146,7 @@ Psi = diag(fa.obj$uniquenesses)
 # (d) residual matrix
 apply(res.mat, 2, round, digits=3)
 
-# [Exercise 9.28]
+#### [Exercise 9.28] ####
 track.women = read.table("T1-9.DAT", fill = TRUE, header = FALSE)
 names(track.women) = c("country","m100","m200","m400","m800","m1500","m3000","marathon")
 head(track.women)
